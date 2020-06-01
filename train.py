@@ -10,12 +10,11 @@ from nn import sequence_nll_loss_bits
 from trainer import Trainer
 from trainer.plugins import (
     TrainingLossMonitor, ValidationPlugin, AbsoluteTimeMonitor, SaverPlugin,
-    GeneratorPlugin, StatsPlugin
+    GeneratorPlugin, StatsPlugin, Logger
 )
 from dataset import FolderDataset, DataLoader
 
 import torch
-from torch.utils.trainer.plugins import Logger
 
 from natsort import natsorted
 
@@ -69,7 +68,7 @@ def param_to_string(value):
 
 def make_tag(params):
     return '-'.join(
-        key + ':' + param_to_string(params[key])
+        key + '-' + param_to_string(params[key])
         for key in tag_params
         if key not in default_params or params[key] != default_params[key]
     )
