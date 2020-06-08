@@ -203,22 +203,21 @@ class ValidationPlugin(Plugin):
             batch_inputs = data[: -1]
             batch_target = data[-1]
             batch_size = batch_target.size()[0]
-
+            
             def wrap(input):
                 if torch.is_tensor(input):
-                    input = Variable(input, volatile=True)
+                    input = Variable(input, requires_grad=False)
                     if self.trainer.cuda:
                         input = input.cuda()
                 return input
             batch_inputs = list(map(wrap, batch_inputs))
 
-            batch_target = Variable(batch_target, volatile=True)
+            batch_target = Variable(batch_target, requires_grad=False)
             if self.trainer.cuda:
                 batch_target = batch_target.cuda()
-
+            #print(batch_inputs[0].size(), *batch_inputs)
             batch_output = self.trainer.model(*batch_inputs)
-            loss_sum += self.trainer.criterion(batch_output, batch_target) \
-                                    .data[0] * batch_size
+            loss_sum += self.trainer.criterion(batch_output, batch_target).item() * batch_size
 
             n_examples += batch_size
 
@@ -292,18 +291,18 @@ class GeneratorPlugin(Plugin):
 
     pattern = 'ep{}-s{}.wav'
 
-    def __init__(self, samples_path, n_samples, sample_length, sample_rate):
+    def __init__(self, samples_path, n_samples, sample_length, sample_rate,sampling_temperature=0.9):
         super().__init__([(1, 'epoch')])
         self.samples_path = samples_path
         self.n_samples = n_samples
         self.sample_length = sample_length
         self.sample_rate = sample_rate
-
+        self.sampling_temperature = sampling_temperature
     def register(self, trainer):
         self.generate = Generator(trainer.model.model, trainer.cuda)
 
     def epoch(self, epoch_index):
-        samples = self.generate(self.n_samples, self.sample_length) \
+        samples = self.generate(self.n_samples, self.sample_length, self.sampling_temperature) \
                       .cpu().float().numpy()
         for i in range(self.n_samples):
             write_wav(

@@ -52,15 +52,15 @@ class DataLoader(DataLoaderBase):
             (batch_size, n_samples) = batch.size()
 
             reset = True
-
+            #print(self.overlap_len, n_samples, self.seq_len)
             for seq_begin in range(self.overlap_len, n_samples, self.seq_len):
-                from_index = seq_begin - self.overlap_len
-                to_index = seq_begin + self.seq_len
-                sequences = batch[:, from_index : to_index]
-                input_sequences = sequences[:, : -1]
-                target_sequences = sequences[:, self.overlap_len :].contiguous()
-
-                yield (input_sequences, reset, target_sequences)
+                if(n_samples - seq_begin > self.seq_len):
+                    from_index = seq_begin - self.overlap_len
+                    to_index = seq_begin + self.seq_len
+                    sequences = batch[:, from_index : to_index]
+                    input_sequences = sequences[:, : -1]
+                    target_sequences = sequences[:, self.overlap_len :].contiguous()
+                    yield (input_sequences, reset, target_sequences)
 
                 reset = False
 

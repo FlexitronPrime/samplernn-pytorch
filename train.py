@@ -31,23 +31,24 @@ default_params = {
     # model parameters
     'n_rnn': 1,
     'dim': 1024,
-    'learn_h0': True,
+    'learn_h0': False,
     'q_levels': 256,
     'seq_len': 1024,
     'weight_norm': True,
-    'batch_size': 128,
+    'batch_size': 64,
     'val_frac': 0.1,
     'test_frac': 0.1,
-
+    'rnn_type':'LSTM',
+    'sampling_temperature':.9,
     # training parameters
-    'keep_old_checkpoints': False,
+    'keep_old_checkpoints': True,
     'datasets_path': 'datasets',
     'results_path': 'results',
     'epoch_limit': 1000,
     'resume': True,
     'sample_rate': 16000,
     'n_samples': 1,
-    'sample_length': 80000,
+    'sample_length': 16000*5,
     'loss_smoothing': 0.99,
     'cuda': True,
     'comet_key': None
@@ -55,7 +56,7 @@ default_params = {
 
 tag_params = [
     'exp', 'frame_sizes', 'n_rnn', 'dim', 'learn_h0', 'q_levels', 'seq_len',
-    'batch_size', 'dataset', 'val_frac', 'test_frac'
+    'batch_size', 'dataset', 'val_frac', 'test_frac','rnn_type'
 ]
 
 def param_to_string(value):
@@ -166,7 +167,7 @@ def main(exp, frame_sizes, dataset, **params):
         exp=exp, frame_sizes=frame_sizes, dataset=dataset,
         **params
     )
-
+    torch.cuda.empty_cache()
     results_path = setup_results_dir(params)
     tee_stdout(os.path.join(results_path, 'log'))
 
@@ -176,7 +177,8 @@ def main(exp, frame_sizes, dataset, **params):
         dim=params['dim'],
         learn_h0=params['learn_h0'],
         q_levels=params['q_levels'],
-        weight_norm=params['weight_norm']
+        weight_norm=params['weight_norm'],
+        rnn_type=params['rnn_type']
     )
     predictor = Predictor(model)
     if params['cuda']:
@@ -216,7 +218,7 @@ def main(exp, frame_sizes, dataset, **params):
     ))
     trainer.register_plugin(GeneratorPlugin(
         os.path.join(results_path, 'samples'), params['n_samples'],
-        params['sample_length'], params['sample_rate']
+        params['sample_length'], params['sample_rate'],params['sampling_temperature']
     ))
     trainer.register_plugin(
         Logger([
@@ -353,7 +355,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '--comet_key', help='comet.ml API key'
     )
-
+    parser.add_argument('--rnn_type', help='GRU or LSTM', choices=['LSTM', 'GRU'])
+    parser.add_argument('--sampling_temperature', help='reduce noise', type=float)
     parser.set_defaults(**default_params)
 
     main(**vars(parser.parse_args()))

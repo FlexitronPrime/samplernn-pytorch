@@ -58,8 +58,9 @@ class Trainer(object):
 
     def train(self):
         for (self.iterations, data) in \
-                enumerate(self.dataset, self.iterations + 1):
+                enumerate(self.dataset, self.iterations +1):
             batch_inputs = data[: -1]
+            #print(self.iterations,batch_inputs[0].size())
             batch_target = data[-1]
             self.call_plugins(
                 'batch', self.iterations, batch_inputs, batch_target
@@ -80,6 +81,7 @@ class Trainer(object):
             plugin_data = [None, None]
 
             def closure():
+                #print(batch_inputs[0].size(), *batch_inputs)
                 batch_output = self.model(*batch_inputs)
 
                 loss = self.criterion(batch_output, batch_target)
